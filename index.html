@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Flashcards</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #e8f4f8;
+            color: #333;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Dark Mode Styles */
+        body.dark-mode {
+            background-color: #121212;
+            color: #f1f1f1;
+        }
+
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background-color: #0077b6;
+            color: #fff;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        /* Progress Tracker */
+        #progress {
+            margin-top: 0.5rem;
+            font-size: 1rem;
+        }
+
+        /* Toggle Button for Dark Mode */
+        #dark-mode-toggle {
+            margin-left: 20px;
+            background: #fff;
+            color: #0077b6;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        #dark-mode-toggle:hover {
+            background: #0077b6;
+            color: #fff;
+        }
+
+        /* Flashcards Container */
+        #flashcard-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            padding: 2rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        /* Individual Flashcard */
+        .flashcard {
+            width: 320px;
+            height: 220px;
+            background-color: #fffcf7;
+            border: 3px solid #0077b6;
+            border-radius: 15px;
+            box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-align: center;
+            padding: 10px;
+            perspective: 1000px;
+            transition: transform 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .flashcard:hover {
+            transform: translateY(-10px);
+        }
+
+        /* Dark Mode Flashcard */
+        body.dark-mode .flashcard {
+            background-color: #333;
+            border-color: #4d9fa9;
+        }
+
+        /* Flip Animation */
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid #023e8a;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Front Side of the Card */
+        .flashcard-front {
+            background-color: #caf0f8;
+            color: #023e8a;
+            font-weight: bold;
+        }
+
+        /* Dark Mode Front Side */
+        body.dark-mode .flashcard-front {
+            background-color: #444;
+            color: #fff;
+        }
+
+        /* Back Side of the Card */
+        .flashcard-back {
+            background-color: #f1faee;
+            color: #1d3557;
+            transform: rotateY(180deg);
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        /* Dark Mode Back Side */
+        body.dark-mode .flashcard-back {
+            background-color: #333;
+            color: #ccc;
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📚 Vocabulary Flashcards</h1>
+        <div id="progress">
+            <p>Progress: <span id="progress-count">0</span> / <span id="total-count"></span> cards flipped</p>
+        </div>
+        <button id="dark-mode-toggle">Toggle Dark Mode</button>
+    </header>
+
+    <main id="flashcard-container">
+        <!-- Flashcards dynamically populated -->
+    </main>
+
+    <script>
+        // Vocabulary words
+        const words = [
+ { word: "Abate", definition: "subside, or moderate", sentence: "The storm began to abate after several hours of heavy rain." },
+    { word: "Aberrant", definition: "abnormal, or deviant", sentence: "The scientist studied the aberrant behavior of the rare species." },
+    { word: "Abeyance", definition: "suspended action", sentence: "The project was held in abeyance until more funding was secured." },
+    { word: "Abscond", definition: "depart secretly and hide", sentence: "The thief tried to abscond with the stolen jewels." },
+    { word: "Abstemious", definition: "sparing in eating and drinking; temperate", sentence: "Monks typically lead abstemious lifestyles." },
+    { word: "Admonish", definition: "warn; reprove", sentence: "The teacher admonished the students for being too noisy." },
+    { word: "Adulterate", definition: "make impure by adding inferior or tainted substances", sentence: "The chef refused to adulterate the recipe with cheap ingredients." },
+    { word: "Aesthetic", definition: "artistic; dealing with or capable of appreciating the beautiful", sentence: "The gallery was known for its modern aesthetic." },
+    { word: "Aggregate", definition: "gather; accumulate", sentence: "The data was aggregated from various sources." },
+    { word: "Alacrity", definition: "cheerful promptness; eagerness", sentence: "She accepted the invitation with alacrity." },
+    { word: "Alleviate", definition: "relieve", sentence: "The medicine helped alleviate her headache." },
+    { word: "Amalgamate", definition: "combine; unite in one body", sentence: "The two companies decided to amalgamate to increase market share." },
+    { word: "Ambiguous", definition: "unclear or doubtful in meaning", sentence: "The instructions were ambiguous and led to confusion." },
+    { word: "Ambivalence", definition: "the state of having contradictory or conflicting emotional attitudes", sentence: "Her ambivalence toward the decision was apparent." },
+    { word: "Ameliorate", definition: "improve", sentence: "The reforms were designed to ameliorate the living conditions of the poor." },
+    { word: "Anachronism", definition: "something or someone misplaced in time", sentence: "The movie was full of anachronisms, like a smartphone in a 19th-century setting." },
+    { word: "Analogous", definition: "comparable", sentence: "The human brain is analogous to a computer in how it processes information." },
+    { word: "Anarchy", definition: "absence of governing body; state of disorder", sentence: "The country descended into anarchy after the government collapsed." },
+    { word: "Anomalous", definition: "abnormal; irregular", sentence: "The scientist found an anomalous result that didn’t fit the pattern." },
+    { word: "Antipathy", definition: "aversion; dislike", sentence: "He had a strong antipathy toward unfair practices." },
+    { word: "Apathy", definition: "lack of caring; indifference", sentence: "The general apathy among the voters led to low turnout at the election." },
+    { word: "Appease", definition: "pacify or soothe; relieve", sentence: "The government tried to appease the protesters by meeting their demands." },
+    { word: "Apprise", definition: "inform", sentence: "She was apprised of the situation as soon as it happened." },
+    { word: "Approbation", definition: "approval", sentence: "The policy received widespread approbation from the public." },
+    { word: "Appropriate", definition: "acquire; take possession of for one’s own use", sentence: "The land was appropriated by the state for the new highway." },
+    { word: "Arduous", definition: "hard; strenuous", sentence: "Climbing the mountain was an arduous task." },
+    { word: "Artless", definition: "without guile; open and honest", sentence: "Her artless charm won over everyone at the party." },
+    { word: "Ascetic", definition: "practicing self-denial; austere", sentence: "The monk led an ascetic life, devoid of luxuries." },
+    { word: "Assiduous", definition: "diligent", sentence: "The assiduous student earned top marks in all her classes." },
+    { word: "Assuage", definition: "ease or lessen (pain); satisfy (hunger); soothe (anger)", sentence: "She tried to assuage his guilt by offering an apology." },
+    { word: "Attenuate", definition: "make thinner", sentence: "The signal was attenuated as it traveled through the cable." },
+    { word: "Audacious", definition: "daring; bold", sentence: "His audacious plan shocked everyone in the meeting." },
+    { word: "Austere", definition: "forbiddingly stern; severely simple and unornamented", sentence: "The room was plain, almost austere, with no decorations." },
+    { word: "Autonomous", definition: "self-governing; independent", sentence: "The region gained autonomous status after years of negotiation." },
+    { word: "Aver", definition: "assert confidently or declare", sentence: "The lawyer averred that her client was innocent." },
+    { word: "Banal", definition: "hackneyed; commonplace; trite; lacking originality", sentence: "The movie was filled with banal dialogue." },
+    { word: "Belie", definition: "contradict; give a false impression", sentence: "His calm expression belied the anxiety he felt inside." },
+    { word: "Beneficent", definition: "kindly; doing good", sentence: "The beneficent organization helped thousands of people in need." },
+    { word: "Bolster", definition: "support; reinforce", sentence: "The new evidence bolstered his argument." },
+    { word: "Bombastic", definition: "pompous; using inflated language", sentence: "The politician's bombastic speech failed to impress the audience." },
+    { word: "Boorish", definition: "rude; insensitive", sentence: "His boorish behavior offended everyone at the dinner party." },
+    { word: "Burgeon", definition: "grow forth; send out buds", sentence: "The small company burgeoned into a global corporation." },
+    { word: "Burnish", definition: "make shiny by rubbing; polish", sentence: "He spent hours burnishing his antique car to a high shine." },
+    { word: "Buttress", definition: "support; prop up", sentence: "The architect designed buttresses to strengthen the walls of the cathedral." },
+    { word: "Capricious", definition: "unpredictable; fickle", sentence: "The stock market can be quite capricious." },
+    { word: "Castigation", definition: "punishment; severe criticism", sentence: "The critic’s castigation of the play was harsh but fair." },
+    { word: "Catalyst", definition: "agent that increases the pace of a chemical action", sentence: "Enzymes act as catalysts in biological reactions." },
+    { word: "Caustic", definition: "burning; sarcastically biting", sentence: "Her caustic remarks hurt his feelings." },
+    { word: "Chicanery", definition: "trickery; deception", sentence: "The politician was known for his chicanery and manipulative tactics." },
+    { word: "Coagulate", definition: "thicken; congeal; clot", sentence: "The blood began to coagulate at the wound site." },
+    { word: "Coda", definition: "concluding section of a musical or literary composition; summarizes or concludes", sentence: "The symphony’s coda brought the performance to a thrilling end." },
+    { word: "Cogent", definition: "convincing", sentence: "Her cogent argument persuaded the committee." },
+    { word: "Commensurate", definition: "corresponding in extent, degree, etc.; proportionate", sentence: "His salary was commensurate with his experience and skills." },
+    { word: "Compendium", definition: "brief, comprehensive summary", sentence: "The book is a compendium of basic facts about the human body." },
+    { word: "Complaisant", definition: "trying to please; overly polite; obliging", sentence: "Her complaisant nature made her easy to get along with." },
+    { word: "Compliant", definition: "yielding; conforming to requirements", sentence: "The company was compliant with all government regulations." },
+    { word: "Conciliatory", definition: "reconciling; soothing", sentence: "The diplomat took a conciliatory approach to resolve the conflict." },
+    { word: "Condone", definition: "overlook; forgive; give tacit approval; excuse", sentence: "The manager couldn’t condone such reckless behavior in the workplace." },
+    { word: "Confound", definition: "confuse; puzzle", sentence: "The puzzle confounded even the experts." },
+    { word: "Connoisseur", definition: "person competent to act as a judge of art; a lover of art", sentence: "The wine connoisseur could easily distinguish between the finest vintages." },
+    { word: "Contention", definition: "claim; thesis", sentence: "His main contention was that the law was unconstitutional." },
+    { word: "Contentious", definition: "quarrelsome", sentence: "The contentious debate lasted for hours." },
+    { word: "Contrite", definition: "penitent", sentence: "Feeling contrite after the argument, she apologized to her friend." },
+    { word: "Conundrum", definition: "riddle; difficult problem", sentence: "Solving this math problem felt like an unsolvable conundrum." },
+    { word: "Converge", definition: "approach; tend to meet; come together", sentence: "The two rivers converge just outside the city." },
+    { word: "Convoluted", definition: "coiled around; involved; intricate", sentence: "The novel’s convoluted plot left readers confused." },
+    { word: "Craven", definition: "cowardly", sentence: "His craven refusal to stand up for his friend was disappointing." },
+    { word: "Daunt", definition: "intimidate; frighten", sentence: "The challenging climb did not daunt the experienced hikers." },
+    { word: "Decorum", definition: "propriety; orderliness and good taste in manners", sentence: "The guests were asked to maintain decorum during the ceremony." },
+    { word: "Default", definition: "failure to act", sentence: "Her default on the loan led to legal consequences." },
+    { word: "Deference", definition: "courteous regard for another’s wishes", sentence: "He showed deference to his elders by listening respectfully." },
+    { word: "Delineate", definition: "portray; depict; sketch", sentence: "The artist delineated the features of the landscape with great detail." },
+    { word: "Denigrate", definition: "blacken", sentence: "The politician tried to denigrate his opponent’s character during the debate." },
+    { word: "Deride", definition: "ridicule; make fun of", sentence: "The comedian’s jokes were intended to deride political figures." },
+    { word: "Derivative", definition: "unoriginal; obtained from another source", sentence: "Her artwork was criticized for being too derivative of modernist styles." },
+    { word: "Desiccate", definition: "dry up", sentence: "The hot sun desiccated the once-lush fields." },
+    { word: "Desultory", definition: "aimless; haphazard; digressing at random", sentence: "His desultory conversation jumped from one topic to another." },
+    { word: "Deterrent", definition: "something that discourages; hindrance", sentence: "The new security measures serve as a deterrent to potential thieves." },
+    { word: "Diatribe", definition: "bitter scolding; invective", sentence: "The article was a diatribe against the government’s policies." },
+    { word: "Dichotomy", definition: "split; branching into two parts (especially contradictory ones)", sentence: "The play explores the dichotomy between good and evil." },
+    { word: "Diffidence", definition: "shyness", sentence: "Her diffidence made it difficult for her to speak in public." },
+    { word: "Diffuse", definition: "wordy, rambling, spread out (like a gas)", sentence: "His diffuse writing style made the essay hard to follow." },
+ { word: "Digression", definition: "wandering away from the subject", sentence: "Her speech contained several interesting digressions that were unrelated to the main topic." },
+    { word: "Dirge", definition: "lament with music", sentence: "The funeral ended with a somber dirge." },
+    { word: "Disabuse", definition: "correct a false impression; undeceive", sentence: "He quickly disabused her of the idea that the project would be easy." },
+    { word: "Discerning", definition: "mentally quick and observant; having insight", sentence: "The discerning customer noticed the fine details in the craftsmanship." },
+    { word: "Discordant", definition: "not harmonious; conflicting", sentence: "The discordant sounds from the band made the performance difficult to enjoy." },
+    { word: "Discredit", definition: "defame; destroy confidence in; disbelieve", sentence: "The scandal discredited the politician in the eyes of the public." },
+    { word: "Discrepancy", definition: "lack of consistency; difference", sentence: "There was a discrepancy between the two reports that needed to be resolved." },
+    { word: "Discrete", definition: "separate; unconnected; consisting of distinct parts", sentence: "The data was divided into discrete categories for analysis." },
+    { word: "Disingenuous", definition: "lacking genuine candor; insincere", sentence: "His apology felt disingenuous, as if he didn’t really mean it." },
+    { word: "Disinterested", definition: "unprejudiced", sentence: "The judge remained disinterested throughout the trial, ensuring fairness." },
+    { word: "Disjointed", definition: "lacking coherence; separated at the joints", sentence: "The movie had a disjointed plot that was hard to follow." },
+    { word: "Dismiss", definition: "eliminate from consideration; reject", sentence: "The committee dismissed the idea as impractical." },
+    { word: "Disparage", definition: "belittle", sentence: "He was quick to disparage the accomplishments of others." },
+    { word: "Disparate", definition: "basically different; unrelated", sentence: "The two theories are disparate and cannot be compared directly." },
+    { word: "Dissemble", definition: "disguise; pretend", sentence: "She tried to dissemble her true feelings during the meeting." },
+    { word: "Disseminate", definition: "distribute; spread; scatter (like seeds)", sentence: "The Internet allows information to be disseminated quickly around the world." },
+    { word: "Dissolution", definition: "disintegration; looseness in morals", sentence: "The dissolution of the partnership was inevitable due to ongoing conflicts." },
+    { word: "Dissonance", definition: "discord; opposite of harmony", sentence: "The dissonance between their opinions created tension in the group." },
+    { word: "Distend", definition: "expand; swell out", sentence: "His stomach began to distend after the large meal." },
+    { word: "Distill", definition: "purify; refine; concentrate", sentence: "The author distilled his ideas into a clear and concise argument." },
+    { word: "Diverge", definition: "vary; go in different directions from the same point", sentence: "The two paths diverge at the edge of the forest." },
+    { word: "Divest", definition: "strip; deprive", sentence: "The company decided to divest itself of its unprofitable assets." },
+    { word: "Document", definition: "provide written evidence", sentence: "He carefully documented the steps of the experiment." },
+    { word: "Dogmatic", definition: "opinionated; arbitrary; doctrinal", sentence: "Her dogmatic insistence on doing things her way caused tension in the team." },
+    { word: "Dormant", definition: "sleeping; lethargic; latent", sentence: "The volcano has been dormant for over a century." },
+    { word: "Dupe", definition: "someone easily fooled", sentence: "The con artist managed to dupe several people out of their money." },
+    { word: "Ebullient", definition: "showing excitement; overflowing with enthusiasm", sentence: "Her ebullient personality made her the life of the party." },
+    { word: "Eclectic", definition: "selective; composed of elements drawn from disparate sources", sentence: "His taste in music was eclectic, ranging from classical to jazz." },
+    { word: "Efficacy", definition: "power to produce desired effect", sentence: "The efficacy of the new drug has yet to be proven in clinical trials." },
+    { word: "Effrontery", definition: "impudence; shameless boldness; sheer nerve", sentence: "She had the effrontery to ask for a raise after only working for a month." },
+    { word: "Elegy", definition: "poem or song expressing lamentation", sentence: "The poet composed an elegy in memory of his friend." },
+    { word: "Elicit", definition: "draw out by discussion", sentence: "The teacher tried to elicit responses from the quiet students." },
+    { word: "Embellish", definition: "adorn; ornament; enhance, as a story", sentence: "He embellished his travel stories to make them more entertaining." },
+    { word: "Empirical", definition: "based on experience", sentence: "The scientist relied on empirical evidence to support her theory." },
+    { word: "Emulate", definition: "imitate; rival", sentence: "He tried to emulate his father’s success in business." },
+    { word: "Endemic", definition: "prevailing among a specific group of people or in a specific area or country", sentence: "Malaria is endemic to certain tropical regions." },
+    { word: "Enervate", definition: "weaken", sentence: "The intense heat enervated the athletes, slowing their progress." },
+    { word: "Engender", definition: "cause; produce", sentence: "The policy change engendered controversy among the staff." },
+    { word: "Enhance", definition: "increase; improve", sentence: "The new software will enhance the system’s performance." },
+    { word: "Ephemeral", definition: "short-lived; fleeting", sentence: "The beauty of the sunset was ephemeral, lasting only a few minutes." },
+    { word: "Equanimity", definition: "calmness of temperament; composure", sentence: "She maintained her equanimity even in the face of crisis." },
+    { word: "Equivocate", definition: "lie; mislead; attempt to conceal the truth", sentence: "The politician continued to equivocate when asked about the scandal." },
+    { word: "Erudite", definition: "learned; scholarly", sentence: "His erudite lecture on ancient philosophy impressed the audience." },
+    { word: "Esoteric", definition: "hard to understand; known only to the chosen few", sentence: "The professor’s esoteric discussion of quantum physics went over most students' heads." },
+{ word: "Eulogy", definition: "expression of praise, often on the occasion of someone's death", sentence: "At the funeral, the speaker delivered a heartfelt eulogy for the deceased." },
+            { word: "Euphemism", definition: "mild expression in place of an unpleasant one", sentence: "Using 'passed away' as a euphemism for 'died' can soften the harshness of the news." },
+            { word: "Exacerbate", definition: "worsen; embitter", sentence: "His reckless comments only served to exacerbate the tension in the room." },
+            { word: "Exculpate", definition: "clear from blame", sentence: "The evidence presented was enough to exculpate him from the charges." },
+            { word: "Exigency", definition: "urgent situation; pressing needs or demands", sentence: "The exigency of the situation required immediate action." },
+            { word: "Extrapolation", definition: "projection; conjecture", sentence: "The extrapolation of current trends suggests a significant increase in population over the next decade." },
+            { word: "Facetious", definition: "joking (often inappropriately); humorous", sentence: "His facetious remarks during the serious meeting were not well received." },
+            { word: "Facilitate", definition: "help bring about; make less difficult", sentence: "The new software is designed to facilitate easier communication between departments." },
+            { word: "Fallacious", definition: "false; misleading", sentence: "The argument was based on fallacious reasoning." },
+            { word: "Fatuous", definition: "brainless; inane; foolish, yet smug", sentence: "His fatuous remarks made it clear he had not considered the implications." },
+            { word: "Fawning", definition: "trying to please by behaving obsequiously, flattering, or cringing", sentence: "The fawning employee tried to win the boss's favor." },
+            { word: "Felicitous", definition: "apt; suitably expressed; well chosen", sentence: "Her felicitous choice of words made the speech memorable." },
+            { word: "Fervor", definition: "glowing ardor; intensity of feeling", sentence: "He spoke with fervor about the importance of education." },
+            { word: "Flag", definition: "droop; grow feeble", sentence: "The athlete began to flag after hours of competition." },
+            { word: "Fledgling", definition: "inexperienced", sentence: "As a fledgling writer, she sought feedback from her peers." },
+            { word: "Flout", definition: "reject; mock; show contempt for", sentence: "They chose to flout the rules set by the organization." },
+            { word: "Foment", definition: "stir up; instigate", sentence: "His actions were intended to foment unrest among the crowd." },
+            { word: "Forestall", definition: "prevent by taking action in advance", sentence: "They took measures to forestall any potential conflicts." },
+            { word: "Frugality", definition: "thrift; economy", sentence: "His frugality allowed him to save for his future." },
+            { word: "Futile", definition: "useless; hopeless; ineffectual", sentence: "Their attempts to negotiate were ultimately futile." },
+            { word: "Gainsay", definition: "deny", sentence: "You cannot gainsay the impact of climate change." },
+            { word: "Garrulous", definition: "loquacious; talkative; wordy", sentence: "The garrulous old man told stories for hours." },
+            { word: "Goad", definition: "urge on", sentence: "She goaded him into making a decision." },
+            { word: "Gouge", definition: "overcharge", sentence: "The mechanic tried to gouge me for repairs." },
+            { word: "Grandiloquent", definition: "pompous; bombastic; using high-sounding language", sentence: "His grandiloquent speeches often left the audience confused." },
+            { word: "Gregarious", definition: "sociable", sentence: "She is a gregarious person who loves to be around others." },
+            { word: "Guileless", definition: "without deceit", sentence: "His guileless nature made him well-liked among his peers." },
+            { word: "Gullible", definition: "easily deceived", sentence: "She was too gullible and believed every story she heard." },
+            { word: "Harangue", definition: "long, passionate, and vehement speech", sentence: "He delivered a harangue about the need for reform." },
+            { word: "Homogeneous", definition: "of the same kind", sentence: "The population was relatively homogeneous in terms of culture." },
+            { word: "Hyperbole", definition: "exaggeration; overstatement", sentence: "His claims were mere hyperbole and not to be taken seriously." },
+            { word: "Iconoclastic", definition: "attacking cherished traditions", sentence: "Her iconoclastic views challenged conventional wisdom." },
+            { word: "Idolatry", definition: "worship of idols; excessive admiration", sentence: "The movie star's idolatry among fans was evident." },
+            { word: "Immutable", definition: "unchangeable", sentence: "The laws of physics are generally considered immutable." },
+            { word: "Impair", definition: "injure; hurt", sentence: "Drinking too much can impair your judgment." },
+            { word: "Impassive", definition: "without feeling; imperturbable; stoical", sentence: "His impassive demeanor gave nothing away." },
+            { word: "Impede", definition: "hinder; block", sentence: "The heavy rains could impede the rescue efforts." },
+            { word: "Impermeable", definition: "impervious; not permitting passage through its substance", sentence: "The raincoat is made from impermeable material." },
+            { word: "Imperturbable", definition: "calm; placid", sentence: "She remained imperturbable in the face of chaos." },
+            { word: "Impervious", definition: "impenetrable; incapable of being damaged or distressed", sentence: "The armor was impervious to the enemy's attacks." },
+            { word: "Implacable", definition: "incapable of being pacified", sentence: "He had an implacable resolve to win the competition." },
+    { word: "Implicit", definition: "understood but not stated", sentence: "Her approval was implicit in her smile." },
+    { word: "Implode", definition: "burst inward", sentence: "The building will implode if the explosives are set correctly." },
+    { word: "Inadvertently", definition: "unintentionally; by oversight; carelessly", sentence: "He inadvertently left his phone at the restaurant." },
+    { word: "Inchoate", definition: "recently begun; rudimentary; elementary", sentence: "The project is still in its inchoate stages." },
+    { word: "Incongruity", definition: "lack of harmony; absurdity", sentence: "There was an incongruity between the upbeat music and the sad scene." },
+    { word: "Inconsequential", definition: "insignificant; unimportant", sentence: "The details are inconsequential to the main argument." },
+    { word: "Incorporate", definition: "introduce something into a larger whole; combine; unite", sentence: "We need to incorporate feedback into our final report." },
+    { word: "Indeterminate", definition: "uncertain; not clearly fixed; indefinite", sentence: "The outcome of the election remains indeterminate." },
+    { word: "Indigence", definition: "poverty", sentence: "The charity aims to alleviate indigence in the community." },
+    { word: "Indolent", definition: "lazy", sentence: "He became indolent after he lost his job." },
+    { word: "Inert", definition: "inactive; lacking power to move", sentence: "The inert gas did not react with any other substances." },
+    { word: "Ingenuous", definition: "naive and trusting; young; unsophisticated", sentence: "Her ingenuous nature made her an easy target for deception." },
+    { word: "Inherent", definition: "firmly established by nature or habit", sentence: "There are inherent risks in starting a new business." },
+    { word: "Innocuous", definition: "harmless", sentence: "The drug is innocuous and poses no risk to health." },
+    { word: "Insensible", definition: "unconscious; unresponsive", sentence: "He was insensible after the accident." },
+    { word: "Insinuate", definition: "hint; imply; creep in", sentence: "He tried to insinuate that I was responsible for the mistake." },
+    { word: "Insipid", definition: "lacking in flavor; dull", sentence: "The soup was insipid and needed more seasoning." },
+    { word: "Insularity", definition: "narrow-mindedness; isolation", sentence: "Her insularity prevented her from understanding other cultures." },
+    { word: "Intractable", definition: "unruly; stubborn; unyielding", sentence: "The intractable problem required innovative solutions." },
+    { word: "Intransigence", definition: "refusal of any compromise; stubbornness", sentence: "His intransigence during negotiations led to a stalemate." },
+    { word: "Inundate", definition: "overwhelm; flood; submerge", sentence: "The heavy rains can inundate the low-lying areas." },
+    { word: "Inured", definition: "accustomed; hardened", sentence: "She became inured to the noise of the city." },
+    { word: "Invective", definition: "abuse", sentence: "His invective against the government was widely reported." },
+    { word: "Irascible", definition: "irritable; easily angered", sentence: "His irascible nature made him difficult to work with." },
+    { word: "Irresolute", definition: "uncertain how to act; weak", sentence: "She felt irresolute about making such a big decision." },
+    { word: "Itinerary", definition: "plan of a trip", sentence: "We followed the itinerary closely during our travels." },
+    { word: "Laconic", definition: "brief and to the point", sentence: "His laconic reply left her wanting more information." },
+    { word: "Lassitude", definition: "languor; weariness", sentence: "After the long meeting, a sense of lassitude settled over the room." },
+    { word: "Latent", definition: "potential but undeveloped; dormant; hidden", sentence: "The talent remained latent until she discovered it in herself." },
+    { word: "Laud", definition: "praise", sentence: "She was lauded for her contributions to the project." },
+    { word: "Lethargic", definition: "drowsy; dull", sentence: "He felt lethargic after staying up late." },
+    { word: "Levee", definition: "stone embankment to prevent flooding", sentence: "The levee held strong against the rising waters." },
+    { word: "Levity", definition: "lack of seriousness or steadiness; frivolity", sentence: "They approached the serious topic with surprising levity." },
+    { word: "Log", definition: "record of a voyage or flight; record of day-to-day activities", sentence: "He kept a log of his travels for future reference." },
+    { word: "Loquacious", definition: "talkative", sentence: "Her loquacious nature made her the life of the party." },
+    { word: "Lucid", definition: "easily understood; clear; intelligible", sentence: "His lucid explanation helped everyone understand the concept." },
+    { word: "Luminous", definition: "shining; issuing light", sentence: "The stars were luminous against the night sky." },
+    { word: "Magnanimity", definition: "generosity", sentence: "Her magnanimity in forgiving others was admirable." },
+    { word: "Malingerer", definition: "one who feigns illness to escape duty", sentence: "He was labeled a malingerer for skipping work without reason." },
+    { word: "Malleable", definition: "capable of being shaped by pounding; impressionable", sentence: "Gold is malleable and can be shaped into thin sheets." },
+    { word: "Maverick", definition: "rebel; nonconformist", sentence: "He was a maverick in the tech industry, often challenging norms." },
+    { word: "Mendacious", definition: "lying; habitually dishonest", sentence: "His mendacious claims were quickly debunked." },
+    { word: "Metamorphosis", definition: "change of form", sentence: "The caterpillar underwent a metamorphosis to become a butterfly." },
+    { word: "Meticulous", definition: "excessively careful; painstaking; scrupulous", sentence: "She was meticulous in her research, leaving no stone unturned." },
+    { word: "Misanthrope", definition: "one who hates mankind", sentence: "The misanthrope avoided social interactions at all costs." },
+    { word: "Mitigate", definition: "appease; moderate", sentence: "The government took steps to mitigate the effects of the recession." },
+    { word: "Mollify", definition: "Soothe", sentence: "The mother tried to mollify her crying baby with a lullaby." },
+    { word: "Morose", definition: "Ill-humored; sullen; melancholy", sentence: "After losing the game, he became morose and refused to talk to anyone." },
+    { word: "Mundane", definition: "Worldly as opposed to spiritual; everyday", sentence: "She wanted to escape her mundane routine and travel the world." },
+    { word: "Negate", definition: "Cancel out; nullify; deny", sentence: "The new evidence will negate the prosecutor’s claims." },
+    { word: "Neophyte", definition: "Recent convert; beginner", sentence: "As a neophyte in coding, she was eager to learn the basics of programming." },
+    { word: "Obdurate", definition: "Stubborn", sentence: "Despite the protests, the mayor remained obdurate in his decision." },
+    { word: "Obsequious", definition: "Lavishly attentive; servile; sycophantic", sentence: "The obsequious assistant laughed at all the boss’s jokes, even the bad ones." },
+    { word: "Obviate", definition: "Make unnecessary; get rid of", sentence: "A peaceful solution would obviate the need for military intervention." },
+    { word: "Occlude", definition: "Shut; close", sentence: "The dentist noticed that her teeth didn’t occlude properly." },
+    { word: "Officious", definition: "Meddlesome; excessively pushy in offering one’s services", sentence: "The officious neighbor was always poking around in other people’s business." },
+    { word: "Onerous", definition: "Burdensome", sentence: "The manager assigned him the onerous task of cleaning the entire warehouse." },
+    { word: "Opprobrium", definition: "Infamy; vilification", sentence: "The celebrity faced public opprobrium after the scandal was exposed." },
+    { word: "Oscillate", definition: "Vibrate; waver", sentence: "The fan oscillated from side to side, cooling the entire room." },
+    { word: "Ostentatious", definition: "Showy; pretentious; trying to attract attention", sentence: "Her ostentatious display of wealth made her the subject of gossip." },
+    { word: "Paragon", definition: "Model of perfection", sentence: "She is considered a paragon of virtue and grace." },
+    { word: "Partisan", definition: "One-sided; prejudiced; committed to a party", sentence: "The news channel was criticized for its partisan reporting." },
+    { word: "Pathological", definition: "Pertaining to disease", sentence: "His pathological lying was a sign of deeper psychological issues." },
+    { word: "Paucity", definition: "Scarcity", sentence: "The paucity of affordable housing is a major concern in the city." },
+    { word: "Pedantic", definition: "Showing off learning; bookish", sentence: "His pedantic explanations of obscure trivia bored everyone at the party." },
+    { word: "Penchant", definition: "Strong inclination; liking", sentence: "She has a penchant for collecting vintage jewelry." },
+    { word: "Penury", definition: "Severe poverty; stinginess", sentence: "After years of living in penury, the artist finally sold one of his paintings." },
+    { word: "Perennial", definition: "Something long-lasting", sentence: "The perennial beauty of the landscape has attracted tourists for centuries." },
+    { word: "Perfidious", definition: "Treacherous; disloyal", sentence: "The perfidious act of betrayal left her feeling devastated." },
+    { word: "Perfunctory", definition: "Superficial; not thorough; lacking interest, care, or enthusiasm", sentence: "His perfunctory apology didn’t feel sincere to anyone in the room." },
+    { word: "Permeable", definition: "Penetrable; porous; allowing liquids or gas to pass through", sentence: "The fabric was not permeable to water, making it ideal for raincoats." },
+    { word: "Pervasive", definition: "Spread throughout", sentence: "The pervasive scent of lavender filled the entire house." },
+    { word: "Phlegmatic", definition: "Calm; not easily disturbed", sentence: "Despite the chaos, she remained phlegmatic and continued with her work." },
+    { word: "Piety", definition: "Devoutness; reverence for God", sentence: "His acts of charity were motivated by genuine piety." },
+    { word: "Placate", definition: "Pacify; conciliate", sentence: "The company tried to placate the angry customers by offering refunds." },
+    { word: "Plasticity", definition: "Ability to be molded", sentence: "The plasticity of clay allows sculptors to create a variety of shapes." },
+    { word: "Platitude", definition: "Trite remark; commonplace statement", sentence: "He filled his speech with meaningless platitudes." },
+    { word: "Plethora", definition: "Excess; overabundance", sentence: "There was a plethora of desserts at the party, more than anyone could eat." },
+    { word: "Plummet", definition: "Fall sharply", sentence: "After the scandal, the company’s stock price plummeted." },
+    { word: "Porous", definition: "Full of pores; like a sieve", sentence: "The porous material allowed water to pass through easily." },
+    { word: "Pragmatic", definition: "Practical (as opposed to idealistic); concerned with the practical worth or impact of something", sentence: "Her pragmatic approach to problem-solving helped the team stay focused." },
+    { word: "Preamble", definition: "Introductory statement", sentence: "The Constitution’s preamble outlines the purposes of the government." },
+    { word: "Precarious", definition: "Uncertain; risky", sentence: "The climber found himself in a precarious position, hanging from the cliff." },
+    { word: "Precipitate", definition: "Rash, premature, hasty, sudden", sentence: "The precipitate decision to cut the budget led to numerous problems." },
+    { word: "Precursor", definition: "Forerunner", sentence: "The telephone was a precursor to modern communication technology." },
+    { word: "Presumptuous", definition: "Arrogant; taking liberties", sentence: "It was presumptuous of him to assume he would be invited to the meeting." },
+    { word: "Prevaricate", definition: "Lie", sentence: "He seemed to prevaricate when journalists asked pointed questions." },
+    { word: "Pristine", definition: "Characteristic of earlier times; primitive; unspoiled", sentence: "The pristine beaches were untouched by tourism." },
+    { word: "Probity", definition: "Uprightness; incorruptibility", sentence: "Her probity was never questioned, even by her fiercest critics." },
+    { word: "Problematic", definition: "doubtful; unsettled; questionable; perplexing", sentence: "The problematic situation required immediate attention." },
+    { word: "Prodigal", definition: "wasteful; reckless with money", sentence: "The prodigal son wasted his inheritance on extravagant living." },
+    { word: "Profound", definition: "deep; not superficial; complete", sentence: "Her profound understanding of the topic impressed everyone." },
+    { word: "Prohibitive", definition: "tending to prevent the purchase or use of something; inclined to prevent or forbid", sentence: "The prohibitive price of the car kept many buyers away." },
+    { word: "Proliferate", definition: "grow rapidly; spread; multiply", sentence: "The use of smartphones has proliferated over the past decade." },
+    { word: "Propensity", definition: "natural inclination", sentence: "He has a propensity for taking risks." },
+    { word: "Propitiate", definition: "appease", sentence: "They offered gifts to propitiate the angry gods." },
+    { word: "Propriety", definition: "fitness; correct conduct", sentence: "She conducted herself with propriety at the formal event." },
+    { word: "Proscribe", definition: "ostracize; banish; outlaw", sentence: "The law proscribes certain types of behavior." },
+    { word: "Pungent", definition: "stinging; sharp in taste or smell; caustic", sentence: "The pungent odor of garlic filled the kitchen." },
+    { word: "Qualified", definition: "limited; restricted", sentence: "His qualified support was not enough to sway the vote." },
+    { word: "Quibble", definition: "minor objection or complaint", sentence: "They quibbled over the details of the agreement." },
+    { word: "Quiescent", definition: "at rest; dormant; temporarily inactive", sentence: "The volcano has been quiescent for many years." },
+    { word: "Rarefied", definition: "made less dense (of a gas)", sentence: "The rarefied air at high altitudes can be difficult to breathe." },
+    { word: "Recalcitrant", definition: "obstinately stubborn; determined to resist authority; unruly", sentence: "The recalcitrant student refused to follow the rules." },
+    { word: "Recant", definition: "disclaim or disavow; retract a previous statement; openly confess error", sentence: "He was forced to recant his earlier statement." },
+    { word: "Recluse", definition: "hermit; loner", sentence: "The recluse lived in a cabin deep in the woods." },
+    { word: "Recondite", definition: "abstruse; profound; secret", sentence: "The professor's lecture was filled with recondite references." },
+    { word: "Refractory", definition: "stubborn; unmanageable", sentence: "The refractory child refused to listen to his parents." },
+    { word: "Refute", definition: "disprove", sentence: "She was able to refute the allegations against her." },
+    { word: "Relegate", definition: "banish to an inferior position; delegate; assign", sentence: "He was relegated to a lesser role in the company." },
+    { word: "Reproach", definition: "express disapproval or disappointment", sentence: "She looked at him with reproach after his mistake." },
+    { word: "Reprobate", definition: "person hardened in sin; devoid of a sense of decency", sentence: "The reprobate was shunned by the community." },
+    { word: "Repudiate", definition: "disown; disavow", sentence: "She decided to repudiate the claims made against her." },
+    { word: "Rescind", definition: "cancel", sentence: "The company decided to rescind the job offer." },
+    { word: "Resolution", definition: "Determination", sentence: "Her resolution to improve her grades motivated her to study harder." },
+    { word: "Resolve", definition: "determination; firmness of purpose", sentence: "He had the resolve to finish the race despite the pain." },
+    { word: "Reticent", definition: "reserved; uncommunicative; inclined to silence", sentence: "She was reticent about her personal life." },
+    { word: "Reverent", definition: "respectful; worshipful", sentence: "They were reverent in the presence of the ancient artifacts." },
+    { word: "Sage", definition: "person celebrated for wisdom", sentence: "The sage offered valuable advice to the young." },
+    { word: "Salubrious", definition: "healthful", sentence: "The salubrious climate was perfect for outdoor activities." },
+    { word: "Sanction", definition: "approve; ratify", sentence: "The board sanctioned the new policy after much debate." },
+    { word: "Satiate", definition: "satisfy fully", sentence: "He was satiated after the large meal." },
+    { word: "Saturate", definition: "soak thoroughly", sentence: "The heavy rain saturated the ground." },
+    { word: "Savor", definition: "enjoy; have a distinctive flavor, smell, or quality", sentence: "She took a moment to savor the rich taste of the chocolate." },
+    { word: "Secrete", definition: "hide away or cache; produce and release a substance into an organism", sentence: "The plant can secrete a sticky substance to trap insects." },
+    { word: "Shard", definition: "fragment, generally of pottery", sentence: "She found a shard of pottery in the garden." },
+    { word: "Skeptic", definition: "doubter; person who suspends judgment until having examined evidence supporting a point of view", sentence: "The skeptic questioned the validity of the study's results." },
+    { word: "Solicitous", definition: "worried; concerned", sentence: "She was solicitous for the well-being of her friends." },
+    { word: "Soporific", definition: "sleep-causing; marked by sleepiness", sentence: "The soporific effect of the lecture caused many students to doze off." },
+    { word: "Specious", definition: "seemingly reasonable but incorrect; misleading (often intentionally)", sentence: "His argument was specious and did not hold up under scrutiny." },
+    { word: "Spectrum", definition: "colored band produced when a beam of light passes through a prism", sentence: "The artist used a spectrum of colors in her painting." },
+    { word: "Sporadic", definition: "occurring irregularly", sentence: "Sporadic rainfall is expected throughout the week." },
+    { word: "Stigma", definition: "token of disgrace; brand", sentence: "There is a stigma associated with mental health issues." },
+    { word: "Stint", definition: "be thrifty; set limits", sentence: "He had to stint on luxuries to save money for his education." },
+    { word: "Stipulate", definition: "make express conditions; specify", sentence: "The contract stipulates that all work must be completed by June." },
+    { word: "Stolid", definition: "dull; impassive", sentence: "His stolid demeanor made it difficult to read his emotions." },
+    { word: "Striated", definition: "marked with parallel bands; grooved", sentence: "The striated rock formations were a result of geological activity." },
+    { word: "Strut", definition: "pompous walk", sentence: "He had a confident strut as he walked into the room." },
+    { word: "Strut", definition: "supporting bar", sentence: "The engineer designed a strut to support the weight of the roof." },
+    { word: "Subpoena", definition: "writ summoning a witness to appear", sentence: "The lawyer issued a subpoena to compel the witness to testify." },
+    { word: "Subside", definition: "settle down; descend; grow quiet", sentence: "The storm began to subside after several hours." },
+    { word: "Substantiate", definition: "establish by evidence; verify; support", sentence: "The researchers were able to substantiate their findings with data." },
+    { word: "Supersede", definition: "cause to be set aside; replace; make obsolete", sentence: "The new technology will soon supersede the old models." },
+    { word: "Supposition", definition: "hypothesis; surmise", sentence: "The theory was based on the supposition that all humans are rational." },
+    { word: "Tacit", definition: "understood; not put into words", sentence: "There was a tacit agreement between them not to discuss the issue." },
+    { word: "Tangential", definition: "peripheral; only slightly connected; digressing", sentence: "His tangential remarks did not contribute to the main discussion." },
+    { word: "Tenuous", definition: "thin; rare; slim", sentence: "The evidence for the claim was tenuous at best." },
+    { word: "Tirade", definition: "extended scolding; denunciation; harangue", sentence: "She launched into a tirade about the injustices she faced." },
+    { word: "Torpor", definition: "lethargy; sluggishness; dormancy", sentence: "After the meal, a feeling of torpor settled over the group." },
+    { word: "Tortuous", definition: "winding; full of curves", sentence: "The tortuous path made the hike much more challenging." },
+    { word: "Tractable", definition: "docile; easily managed", sentence: "The tractable puppy quickly learned to follow commands." },
+    { word: "Transgression", definition: "violation of a law; sin", sentence: "His transgression of the rules resulted in a penalty." },
+    { word: "Truculence", definition: "aggressiveness; ferocity", sentence: "The truculence of the lion was evident during the feeding." },
+    { word: "Vacillate", definition: "waver; fluctuate", sentence: "She would vacillate between different opinions on the topic." },
+    { word: "Venerate", definition: "revere", sentence: "Many people venerate historical figures for their contributions." },
+    { word: "Veracious", definition: "truthful", sentence: "Her veracious account of the events was appreciated by the jury." },
+    { word: "Verbose", definition: "wordy", sentence: "His verbose writing style often obscured his main points." },
+    { word: "Viable", definition: "practical or workable", sentence: "The team developed a viable solution to the problem." },
+    { word: "Viscous", definition: "sticky; gluey", sentence: "The viscous substance made it difficult to clean up." },
+    { word: "Vituperative", definition: "abusive; scolding", sentence: "The vituperative comments left her feeling hurt." },
+    { word: "Volatile", definition: "changeable; explosive; evaporation rapidly", sentence: "The stock market can be quite volatile." },
+    { word: "Warranted", definition: "justified; authorized", sentence: "The police action was warranted under the circumstances." },
+    { word: "Wary", definition: "very cautious", sentence: "She was wary of strangers in unfamiliar places." },
+    { word: "Welter", definition: "turmoil; bewildering jumble", sentence: "The welter of emotions overwhelmed him." },
+    { word: "Whimsical", definition: "capricious; fanciful", sentence: "The whimsical designs brought joy to the children." },
+    { word: "Zealot", definition: "fanatic; person who shows excessive zeal", sentence: "He was a zealot in his pursuit of environmental causes." }// Add your vocabulary words and definitions here
+        ];
+
+        const flashcardContainer = document.getElementById('flashcard-container');
+        const progressCount = document.getElementById('progress-count');
+        const totalCount = document.getElementById('total-count');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        // Set total flashcards count
+        const totalCards = words.length;
+        totalCount.textContent = totalCards;
+
+        let flippedCount = 0;
+
+        // Creating flashcards dynamically
+        words.forEach(({ word, definition, sentence }) => {
+            const card = document.createElement('div');
+            card.classList.add('flashcard');
+
+            const cardInner = document.createElement('div');
+            cardInner.classList.add('flashcard-inner');
+
+            const front = document.createElement('div');
+            front.classList.add('flashcard-front');
+            front.textContent = word;
+
+            const back = document.createElement('div');
+            back.classList.add('flashcard-back');
+            back.innerHTML = `<strong>${definition}</strong><br><em>${sentence}</em>`;
+
+            cardInner.appendChild(front);
+            cardInner.appendChild(back);
+            card.appendChild(cardInner);
+
+            card.addEventListener('click', () => {
+                card.classList.toggle('flipped');
+                flippedCount = document.querySelectorAll('.flipped').length;
+                progressCount.textContent = flippedCount;
+            });
+
+            flashcardContainer.appendChild(card);
+        });
+
+        // Toggle dark mode
+        darkModeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+        });
+    </script>
+</body>
+</html>
